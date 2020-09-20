@@ -1,10 +1,10 @@
 # Electron Installer
 
 [![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/bq6c06suq5abb66s/branch/master?svg=true)](https://ci.appveyor.com/project/electron-bot/windows-installer/branch/master)
-[![Travis CI Build Status](https://travis-ci.org/electron/windows-installer.svg?branch=master)](https://travis-ci.org/electronjs/windows-installer)
+[![CircleCI](https://circleci.com/gh/electron/windows-installer.svg?style=svg)](https://circleci.com/gh/electron/windows-installer)
 
 NPM module that builds Windows installers for
-[Electron](https://github.com/atom/electron) apps using
+[Electron](https://github.com/electron/electron) apps using
 [Squirrel](https://github.com/Squirrel/Squirrel.Windows).
 
 ## Installing
@@ -17,21 +17,26 @@ npm install --save-dev electron-winstaller
 
 Require the package:
 
-```js
-var electronInstaller = require('electron-winstaller');
+```javascript
+const electronInstaller = require('electron-winstaller');
 ```
 
 Then do a build like so..
 
-```js
-resultPromise = electronInstaller.createWindowsInstaller({
+```javascript
+// NB: Use this syntax within an async function, Node does not have support for
+//     top-level await as of Node 12.
+try {
+  await electronInstaller.createWindowsInstaller({
     appDirectory: '/tmp/build/my-app-64',
     outputDirectory: '/tmp/build/installer64',
     authors: 'My App Inc.',
     exe: 'myapp.exe'
   });
-
-resultPromise.then(() => console.log("It worked!"), (e) => console.log(`No dice: ${e.message}`));
+  console.log('It worked!');
+} catch (e) {
+  console.log(`No dice: ${e.message}`);
+}
 ```
 
 After running you will have an `.nupkg`, a
@@ -57,12 +62,14 @@ There are several configuration settings supported:
 | `signWithParams`      | No       | Params to pass to signtool.  Overrides `certificateFile` and `certificatePassword`. |
 | `iconUrl`             | No       | A URL to an ICO file to use as the application icon (displayed in Control Panel > Programs and Features). Defaults to the Atom icon. |
 | `setupIcon`           | No       | The ICO file to use as the icon for the generated Setup.exe |
+| `skipUpdateIcon`      | No       | Disables setting the icon of `Update.exe`. This can solve installation errors with the following message: "This application could not be started", when the setup is built on a non-Windows system. |
 | `setupExe`            | No       | The name to use for the generated Setup.exe file |
 | `setupMsi`            | No       | The name to use for the generated Setup.msi file |
 | `noMsi`               | No       | Should Squirrel.Windows create an MSI installer? |
 | `noDelta`             | No       | Should Squirrel.Windows delta packages? (disable only if necessary, they are a Good Thing) |
 | `remoteReleases`      | No       | A URL to your existing updates. If given, these will be downloaded to create delta updates |
 | `remoteToken`         | No       | Authentication token for remote updates |
+| `frameworkVersion`    | No       | Set the required .NET framework version, e.g. `net461` |
 
 ## Sign your installer or else bad things will happen
 
@@ -78,17 +85,17 @@ as possible, and quit **immediately** after handling them. Squirrel will give yo
 app a short amount of time (~15sec) to apply these operations and quit.
 
 The [electron-squirrel-startup](https://github.com/mongodb-js/electron-squirrel-startup) module will handle
-the most common events for you, such as managing desktop shortcuts.  Just
-add the following to the top of your `main.js` and you're good to go:
+the most common events for you, such as managing desktop shortcuts. Add the following to the top
+of your `main.js` and you're good to go:
 
-```js
+```javascript
 if (require('electron-squirrel-startup')) return;
 ```
 
 You should handle these events in your app's `main` entry point with something
 such as:
 
-```js
+```javascript
 const app = require('app');
 
 // this should be placed at top of main.js to handle setup events quickly
@@ -160,12 +167,12 @@ function handleSquirrelEvent() {
 };
 ```
 
-Notice that the first time the installer launches your app, your app will see a ```--squirrel-firstrun``` flag. This allows you to do things like showing up a splash screen or presenting a settings UI. Another thing to be aware of is that, since the app is spawned by squirrel and squirrel acquires a file lock during installation, you won't be able to successfully check for app updates till a few seconds later when squirrel releases the lock.
+Notice that the first time the installer launches your app, your app will see a `--squirrel-firstrun` flag. This allows you to do things like showing up a splash screen or presenting a settings UI. Another thing to be aware of is that, since the app is spawned by squirrel and squirrel acquires a file lock during installation, you won't be able to successfully check for app updates till a few seconds later when squirrel releases the lock.
 
 ## Debugging this package
 
 You can get debug messages from this package by running with the environment variable `DEBUG=electron-windows-installer:main` e.g.
 
-```
+```shell
 DEBUG=electron-windows-installer:main node tasks/electron-winstaller.js
 ```
